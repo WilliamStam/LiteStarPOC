@@ -73,3 +73,103 @@ and this is where im stuck (`router.py`). i get the user object (thanks middlewa
             media_type=OpenAPIMediaType.OPENAPI_JSON,
         )
 ```
+
+## Authorize for openapi docs
+
+Authorize() as a guard also sets up the security options on that path (so swagger gets the padlock icon for that route). this uses the
+openapi_config.components.security_schemes defined
+
+```python
+app = Litestar(
+    # ...
+    openapi_config=OpenAPIConfig(
+        # ...
+        security=[], # setting this to a blank list removes the padlock from every "other" page. so padlock becomes opt in
+        components=Components(
+            security_schemes={ # do what you please here with the security setups
+                "APIKeyQuery": SecurityScheme(
+                    type="apiKey",
+                    description="Pass the token via a query sting item ?token=xxx",
+                    security_scheme_in="query",
+                    name="token",
+                ),
+                "BearerToken": SecurityScheme(
+                    type="http",
+                    scheme="bearer",
+                    description="Use a bearer token for authorization"
+                ),
+                "APIKeyHeader": SecurityScheme(
+                    type="apiKey",
+                    description="Add a header [X-API-Key] with the token",
+                    security_scheme_in="header",
+                    name="X-API-Key",
+                )
+            },
+        ),
+    ),
+    #...
+```
+
+as soon as Authorize() is added as a guard it will automaticaly apply the security using those
+
+```json
+        "/segment1/authenticated": {
+            "get": {
+                // boring stuff
+                },
+                "deprecated": false,
+                "security": [
+                    {
+                        "APIKeyQuery": []
+                    },
+                    {
+                        "BearerToken": []
+                    },
+                    {
+                        "APIKeyHeader": []
+                    }
+                ]
+            }
+        },
+```
+
+## User middleware
+
+for the user middleware it will use the security setup as per above security_schemes to find the first "token" it finds
+
+```python
+def middleware_user_factory(app: ASGIApp) -> ASGIApp:
+    async def user_middleware(scope: Scope, receive: Receive, send: Send) -> None:
+        request = Request(scope)
+        security_schemas = scope.get("app").openapi_config.components.security_schemes
+        possible_tokens = []
+        
+        for key, schema in security_schemas.items():
+            if schema.type == "apiKey" and schema.security_scheme_in=="query":
+                possible_tokens.append(request.query_params.get(schema.name, None))
+            elif schema.scheme == "bearer" and schema.type == "http":
+                bearer_token = request.headers.get("Authorization", None)
+                if bearer_token:
+                    bearer_token = bearer_token.rsplit(' ', 1)[-1]
+                possible_tokens.append(bearer_token)
+            elif schema.type == "apiKey" and schema.security_scheme_in == "header":
+                possible_tokens.append(request.headers.get(schema.name, None))
+       
+        token = next(
+            (arg for arg in possible_tokens if arg is not None),
+            None
+        )
+        # do whatever you want with the token now
+        print(token)
+        
+``` 
+
+and this is just attached to the app like normal middleware
+
+```python
+app = Litestar(
+    middleware=[
+        middleware_user_factory
+    ],
+)
+```
