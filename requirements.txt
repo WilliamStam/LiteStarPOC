@@ -1,0 +1,5 @@
+uvicorn
+litestar
+jinja2
+wand
+pydantic

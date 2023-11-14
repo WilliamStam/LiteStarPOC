@@ -1,0 +1,12 @@
+/config.py
+/config.yaml
+/config.prod.yaml
+venv/
+/logs/
+__pycache__/
+
+/temp/
+.idea/
+/build
+/dist
+/*.spec
