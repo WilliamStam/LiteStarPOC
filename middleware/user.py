@@ -1,17 +1,6 @@
-from typing import Optional, List
-
-from litestar import Request
 from litestar.types import ASGIApp, Receive, Scope, Send
-from pydantic import BaseModel, Field
 
-class UserModel(BaseModel):
-    id: Optional[int] = None
-    name: Optional[str] = None
-    permissions: List[str] = Field(default_factory=list)
-    
-async def get_user(request:Request) -> UserModel:
-    return request.user
-    
+from models.user import UserModel
 
 
 def middleware_user_factory(app: ASGIApp) -> ASGIApp:

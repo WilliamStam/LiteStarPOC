@@ -5,7 +5,6 @@ from litestar.handlers import BaseRouteHandler
 
 from litestar.exceptions import NotAuthorizedException, PermissionDeniedException
 
-from user import UserModel
 
 class Authorize():
     

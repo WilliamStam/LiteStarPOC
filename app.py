@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from litestar import Litestar
+from litestar import Litestar, Request
 from litestar.contrib.jinja import JinjaTemplateEngine
 from litestar.di import Provide
 from litestar.logging import LoggingConfig
@@ -9,8 +9,8 @@ from litestar.openapi import OpenAPIConfig
 from litestar.openapi.spec import Components, SecurityScheme
 from litestar.template import TemplateConfig
 
+from middleware.user import middleware_user_factory
 from router import router
-from user import get_user, middleware_user_factory
 
 log_config = LoggingConfig(
     root={
@@ -27,6 +27,13 @@ log_config = LoggingConfig(
 )
 
 logger = log_config.configure()()
+
+from models.user import UserModel
+
+
+async def get_user(request: Request) -> UserModel:
+    return request.user
+
 
 app = Litestar(
     debug=True,
@@ -50,11 +57,12 @@ app = Litestar(
         directory=Path("templates"),
         engine=JinjaTemplateEngine,
     ),
-    dependencies={
-        "user": Provide(get_user)
-    },
+    
     middleware=[
         middleware_user_factory
     ],
+    dependencies={
+        "user": Provide(get_user)
+    },
     logging_config=log_config
 )

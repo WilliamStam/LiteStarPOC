@@ -1,7 +1,7 @@
 from litestar import Controller, Request, Router, get
 
-from guard import Authorize
-from user import UserModel
+from guards.authorization import Authorize
+from models.user import UserModel
 
 class MyController(Controller):
     
