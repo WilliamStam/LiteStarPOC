@@ -3,7 +3,6 @@ from pathlib import Path
 
 from litestar import Litestar, Request
 from litestar.contrib.jinja import JinjaTemplateEngine
-from litestar.di import Provide
 from litestar.logging import LoggingConfig
 from litestar.openapi import OpenAPIConfig
 from litestar.openapi.spec import Components, SecurityScheme
@@ -31,8 +30,7 @@ logger = log_config.configure()()
 from models.user import UserModel
 
 
-async def get_user(request: Request) -> UserModel:
-    return request.user
+
 
 
 app = Litestar(
@@ -43,12 +41,26 @@ app = Litestar(
     openapi_config=OpenAPIConfig(
         title="my api",
         version="1.0.0",
-        security=[{"BearerToken": []}],
+        security=[],
         components=Components(
             security_schemes={
+                "APIKeyQuery": SecurityScheme(
+                    type="apiKey",
+                    description="Pass the token via a query sting item ?token=xxx",
+                    security_scheme_in="query",
+                    name="token",
+                    
+                ),
                 "BearerToken": SecurityScheme(
                     type="http",
                     scheme="bearer",
+                    description="Use a bearer token for authorization"
+                ),
+                "APIKeyHeader": SecurityScheme(
+                    type="apiKey",
+                    description="Add a header [X-API-Key] with the token",
+                    security_scheme_in="header",
+                    name="X-API-Key",
                 )
             },
         ),
@@ -61,8 +73,6 @@ app = Litestar(
     middleware=[
         middleware_user_factory
     ],
-    dependencies={
-        "user": Provide(get_user)
-    },
+    
     logging_config=log_config
 )

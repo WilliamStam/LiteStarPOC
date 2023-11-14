@@ -18,6 +18,7 @@ from guards.authorization import Authorize
 
 
 class OpenAPIController(Controller):
+    
     # i pass a few extra things into the template like company logo etc
     # so rather use my "own" template for the docs
     @get("/", include_in_schema=False)
@@ -39,16 +40,23 @@ class OpenAPIController(Controller):
     @get("/openapi.json", include_in_schema=False)
     async def openapi(self, request: Request) -> ASGIResponse:
         request.logger.info(f"User: {request.user}")
-        #2023-11-14 14:24:43,020 22268 INFO:root: User: id=1 name='im real' permissions=['perm1', 'perm2', 'perm4']
+        # 2023-11-14 14:24:43,020 22268 INFO:root: User: id=1 name='im real' permissions=['perm1', 'perm2', 'perm4']
+        
+        schemas = []
+        for key, value in request.app.openapi_config.components.security_schemes.items():
+            schemas.append({key: []})
+        secure_route_security = schemas
         
         for route in request.app.routes:
             for handle in route.route_handlers:
                 if handle.guards is not None:
                     all_scopes = []
+                    authed_route = False
                     for guard in handle.guards:
-                        #if the guard is a subclass of Authorize then we use its scopes
+                        # if the guard is a subclass of Authorize then we use its scopes
                         # might be a good idea to lookup "all" authorize scopes and combine them incase somone goes wierd and guard=[Authorize("a"),Authorize("b")
                         if isinstance(guard, Authorize):
+                            authed_route = True
                             for scope in guard.scopes:
                                 all_scopes.append(scope)
                     if all_scopes:
@@ -56,9 +64,12 @@ class OpenAPIController(Controller):
                         # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authenticated - []
                         # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized1 - ['perm1']
                         # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized2 - ['perm2', 'perm3']
-
+                        
                         # TODO: make the route not appear
                         handle.include_in_schema = False
+                    
+                    if authed_route:
+                        handle.security = secure_route_security
         
         request.app._openapi_schema = None
         schema = request.app.openapi_schema.to_schema()
@@ -82,7 +93,6 @@ class StaticController(Controller):
         height: Optional[int] = None,
         resize: Optional[bool] = None,
     ) -> Response:
-        
         dir_path = os.path.dirname(os.path.realpath(__file__))
         mimetype, encoding = mimetypes.guess_type(rest_of_path)
         
