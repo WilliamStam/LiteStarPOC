@@ -44,19 +44,21 @@ class OpenAPIController(Controller):
         for route in request.app.routes:
             for handle in route.route_handlers:
                 if handle.guards is not None:
+                    all_scopes = []
                     for guard in handle.guards:
                         #if the guard is a subclass of Authorize then we use its scopes
                         # might be a good idea to lookup "all" authorize scopes and combine them incase somone goes wierd and guard=[Authorize("a"),Authorize("b")
                         if isinstance(guard, Authorize):
-                            
-                            request.logger.info(f"Scopes required for route {route.path} - {guard.scopes}")
-                           
-                            # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authenticated - []
-                            # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized1 - ['perm1']
-                            # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized2 - ['perm2', 'perm3']
+                            for scope in guard.scopes:
+                                all_scopes.append(scope)
+                    if all_scopes:
+                        request.logger.info(f"Scopes required for route {route.path} - {all_scopes}")
+                        # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authenticated - []
+                        # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized1 - ['perm1']
+                        # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized2 - ['perm2', 'perm3']
 
-                            # TODO: make the route not appear
-                            handle.include_in_schema = False
+                        # TODO: make the route not appear
+                        handle.include_in_schema = False
         
         request.app._openapi_schema = None
         schema = request.app.openapi_schema.to_schema()
