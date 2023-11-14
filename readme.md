@@ -7,6 +7,8 @@ Testing out a way to handle a user with permissions and the openapi docs only sh
 
 setting up the routes with a `guards=[Authorize(...)]` kickstarts the process. (`api/segment1/routes.py`)
 
+(the user: UserUodel dependency injection here is immaterial. ive just included it for viewing purposes. the user is found by the middleware instead)
+
 ```python
     @get("/open")
     async def open(self, request: Request, user: UserModel) -> str:
