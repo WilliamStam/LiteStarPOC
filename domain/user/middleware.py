@@ -1,7 +1,7 @@
 from litestar import Request
 from litestar.types import ASGIApp, Receive, Scope, Send
 
-from models.user import UserModel
+from .model import UserModel
 
 
 def middleware_user_factory(app: ASGIApp) -> ASGIApp:

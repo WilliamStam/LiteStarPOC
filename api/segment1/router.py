@@ -1,10 +1,9 @@
 from litestar import Controller, Request, Router, get
 from litestar.di import Provide
 
-from dependencies.user import get_user, User
-from guards.authorization import Authorize
-from models.user import UserModel
-
+from domain.user.dependency import get_user, User
+from domain.user.guard import Authorize
+from utilities.openapi import CustomOperation
 class MyController(Controller):
     
     # the user must have this/these permissions to be able to access this route
@@ -13,7 +12,7 @@ class MyController(Controller):
         """totaly open route"""
         return f"all open | {user}"
     
-    @get("/authenticated", guards=[Authorize()])
+    @get("/authenticated", guards=[Authorize()], operation_class=CustomOperation)
     async def authenticated(self, user: User) -> str:
         """user must be authenticated"""
         return f"user must be authenticated | {user}"

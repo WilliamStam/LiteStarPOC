@@ -8,7 +8,9 @@ from litestar.openapi import OpenAPIConfig
 from litestar.openapi.spec import Components, SecurityScheme
 from litestar.template import TemplateConfig
 
-from middleware.user import middleware_user_factory
+from domain.user.middleware import middleware_user_factory
+
+
 from router import router
 
 log_config = LoggingConfig(
@@ -26,8 +28,6 @@ log_config = LoggingConfig(
 )
 
 logger = log_config.configure()()
-
-from models.user import UserModel
 
 
 
@@ -73,6 +73,7 @@ app = Litestar(
     middleware=[
         middleware_user_factory
     ],
+    
     
     logging_config=log_config
 )

@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 import mimetypes
 import os
@@ -14,7 +15,7 @@ from api.segment1.router import router as segment1_router
 
 logger = logging.getLogger(__name__)
 
-from guards.authorization import Authorize
+from domain.user.guard import Authorize
 
 
 class OpenAPIController(Controller):
@@ -64,15 +65,18 @@ class OpenAPIController(Controller):
                         # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authenticated - []
                         # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized1 - ['perm1']
                         # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized2 - ['perm2', 'perm3']
-                        
-                        # TODO: make the route not appear
-                        handle.include_in_schema = False
-                    
+                        if not request.user.has_permissions(all_scopes):
+                            pass
+                            # handle.include_in_schema = False
                     if authed_route:
                         handle.security = secure_route_security
+                
+                
         
-        request.app._openapi_schema = None
         schema = request.app.openapi_schema.to_schema()
+        # request.app.update_openapi_schema()
+        # schema = request.app.openapi_config.to_openapi_schema()
+        print(schema)
         json_encoded_schema = encode_json(schema, request.route_handler.default_serializer)
         return ASGIResponse(
             body=json_encoded_schema,

@@ -3,7 +3,7 @@ from typing import Annotated
 from litestar import Request
 from litestar.params import Dependency
 
-from models.user import UserModel
+from .model import UserModel
 
 
 async def get_user(request: Request) -> UserModel:
