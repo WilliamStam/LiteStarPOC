@@ -12,6 +12,7 @@ from litestar.response.base import ASGIResponse
 from litestar.serialization import encode_json
 
 from api.segment1.router import router as segment1_router
+from api.segment2.router import router as segment2_router
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +116,7 @@ router = Router(
         OpenAPIController,
         StaticController,
         segment1_router,
+        segment2_router,
         # system_router
     ]
 )

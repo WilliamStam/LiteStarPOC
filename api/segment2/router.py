@@ -31,13 +31,13 @@ class MyController(Controller):
 
 
 router = Router(
-    "/segment1",
+    "/segment2",
     route_handlers=[
         MyController,
-    
     ],
     tags=[
-        "only checking permissions on the route"
+        "checking permission on the Router as well"
     ],
-    dependencies={"user": Provide(get_user)}
+    dependencies={"user": Provide(get_user)},
+    guards=[Authorize(["seg2"])]
 )

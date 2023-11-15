@@ -50,6 +50,22 @@ since the Authorize guard has the desired scopes in it you can always loop throu
 
 ```
 
+since this is a normal litestar guard it can be added to the Router() as well. (admin section and check if the user has "admin" permission anyone?)
+
+```python
+router = Router(
+    "/segment2",
+    route_handlers=[
+        MyController,
+    ],
+    tags=[
+        "checking permission on the Router as well"
+    ],
+    dependencies={"user": Provide(get_user)},
+    guards=[Authorize(["seg2"])]
+)
+```
+
 ## OpenAPI spec
 
 and this is where im stuck (`router.py`). i get the user object (thanks middleware). and the route scopes (thanks guards=Authorize) but not including the path is... 
@@ -152,7 +168,7 @@ as soon as Authorize() is added as a guard it will automaticaly apply the securi
 for the user middleware it will use the security setup as per above security_schemes to find the first "token" it finds
 
 ```python
-def middleware_user_factory(app: ASGIApp) -> ASGIApp:
+def UserMiddleware(app: ASGIApp) -> ASGIApp:
     async def user_middleware(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope)
         security_schemas = scope.get("app").openapi_config.components.security_schemes
@@ -183,7 +199,7 @@ and this is just attached to the app like normal middleware
 ```python
 app = Litestar(
     middleware=[
-        middleware_user_factory
+        UserMiddleware
     ],
 )
 ```
