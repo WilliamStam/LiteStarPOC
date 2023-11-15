@@ -3,6 +3,73 @@
 Testing out a way to handle a user with permissions and the openapi docs only showing the accessible endpoints
 
 
+# TODO
+
+## Hide openapi endpoints if the user doesnt have access to them
+
+Hide the openapi endpoints based on guard permissions and user permissions. 
+i have it to the point of having both at the same place for each route when setting up the openapi.json route
+
+```python
+@get("/openapi.json", include_in_schema=False)
+    async def openapi(self, request: Request) -> ASGIResponse:
+        request.logger.info(f"User: {request.user}")
+        
+        schemas = []
+        for key, value in request.app.openapi_config.components.security_schemes.items():
+            schemas.append({key: []})
+        secure_route_security = schemas
+        
+        for route in request.app.routes:
+            for handle in route.route_handlers:
+                if handle.guards is not None:
+                    all_permission = []
+                    authed_route = False
+                    for guard in handle.guards:
+                        # if the guard is a subclass of Authorize then we use its scopes
+                        # might be a good idea to lookup "all" authorize scopes and combine them incase somone goes wierd and guard=[Authorize("a"),Authorize("b")
+                        if isinstance(guard, Authorize):
+                            authed_route = True
+                            for permission in guard.permissions:
+                                all_permission.append(permission)
+                    if all_permission:
+                        request.logger.info(f"Scopes required for route {route.path} - {all_permission}")
+                        if not request.user.has_permissions(all_permission):
+                            # THIS PART DOESNT WANT TO WORK!!!!!!!!!!!
+                            handle.include_in_schema = False
+                            # IT NEVER REFRESHES THE SCHEMA
+                    if authed_route:
+                        handle.security = secure_route_security
+                    
+                
+        
+        # MY ASUMPTION IS THAT SINCE THE SCHEMA IS CACHED ALREADY THAT IT DOESNT RE RENDER NOW WITH THE INCLUDE_IN_SCHEMA SET TO fALSE
+        schema = request.app.openapi_schema.to_schema()
+        
+        json_encoded_schema = encode_json(schema, request.route_handler.default_serializer)
+        return ASGIResponse(
+            body=json_encoded_schema,
+            media_type=OpenAPIMediaType.OPENAPI_JSON,
+        )
+```
+
+this all sets the include_in_schema to False. but the openapi schema is cached at this point and i cant figure out how to re render it
+
+strangely adding "handle.security = secure_route_security" to a route in the above it updates correctly in the docs. only the hide doesnt
+
+## apply "security" to all children (down the chain) when using Scope(guards=Authorize())
+
+THIS IS A WIP AND LESS IMPORTANT RIGHT NOW
+
+the `openapi.json` file when there is a guard Authorize on the route it appends the security stuff to the outputed route. but this isnt carried over from the `Route(guards[Authorize()])` part 
+
+ 
+
+# The Awesome
+
+the following are some cool things added ina round user auth that i think others might find useful
+
+
 ## Routes 
 
 setting up the routes with a `guards=[Authorize(...)]` kickstarts the process. (`api/segment1/routes.py`)
