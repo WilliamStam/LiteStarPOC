@@ -3,13 +3,14 @@ import logging
 import mimetypes
 import os
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from litestar import Controller, Request, Response, Router, get
 from litestar.enums import MediaType, OpenAPIMediaType
 from litestar.response import File, Template
 from litestar.response.base import ASGIResponse
 from litestar.serialization import encode_json
+from pydantic import BaseModel, Field
 
 from api.segment1.router import router as segment1_router
 from api.segment2.router import router as segment2_router
@@ -51,30 +52,29 @@ class OpenAPIController(Controller):
         for route in request.app.routes:
             for handle in route.route_handlers:
                 if handle.guards is not None:
-                    all_scopes = []
+                    all_permission = []
                     authed_route = False
                     for guard in handle.guards:
                         # if the guard is a subclass of Authorize then we use its scopes
                         # might be a good idea to lookup "all" authorize scopes and combine them incase somone goes wierd and guard=[Authorize("a"),Authorize("b")
                         if isinstance(guard, Authorize):
                             authed_route = True
-                            for scope in guard.scopes:
-                                all_scopes.append(scope)
-                    if all_scopes:
-                        request.logger.info(f"Scopes required for route {route.path} - {all_scopes}")
-                        if not request.user.has_permissions(all_scopes):
+                            for permission in guard.permissions:
+                                all_permission.append(permission)
+                    if all_permission:
+                        request.logger.info(f"Scopes required for route {route.path} - {all_permission}")
+                        if not request.user.has_permissions(all_permission):
                             pass
                             # handle.include_in_schema = False
                     if authed_route:
                         handle.security = secure_route_security
-                    handle.operation_class.x_scopes = all_scopes
+                    handle.operation_class.x_scopes = all_permission
                     handle.operation_class.x_requires_auth = authed_route
                 
         
         schema = request.app.openapi_schema.to_schema()
         # request.app.update_openapi_schema()
         # schema = request.app.openapi_config.to_openapi_schema()
-        print(schema)
         json_encoded_schema = encode_json(schema, request.route_handler.default_serializer)
         return ASGIResponse(
             body=json_encoded_schema,
@@ -110,6 +110,51 @@ class StaticController(Controller):
         )
 
 
+# ----------------------
+# BONUS since we're using objects for permissions everhwre now and the Autho() adds each to the system permissions we can get a list of all permissions used in the system
+
+class PermissionItem(BaseModel):
+    key: Optional[str] = None
+    description: Optional[str] = None
+    parent: Optional[str] = None
+
+class PermissionsResponse(BaseModel):
+    system: List[PermissionItem] = Field(default_factory=list)
+    
+@get("/permissions",description="Get all the system permissions")
+async def get_all_permissions_used() -> PermissionsResponse:
+    from permissions import system_permissions
+    
+    response = PermissionsResponse()
+    for row in system_permissions:
+        response.system.append(
+            PermissionItem(
+                key=row.id,
+                description=row.description,
+                parent=str(row.parent) if row.parent else None,
+            )
+        )
+        
+    return response
+
+
+# {
+#     "key": "perm2",
+#     "description": "User must have perm2",
+#     "parent": null
+# },
+# {
+#     "key": "perm3",
+#     "description": "User must have perm3",
+#     "parent": null
+# },
+# {
+#     "key": "seg2.perm1",
+#     "description": "User must have seg2.perm1",
+#     "parent": "seg2"
+# },
+# --------------
+
 router = Router(
     "/",
     route_handlers=[
@@ -117,6 +162,6 @@ router = Router(
         StaticController,
         segment1_router,
         segment2_router,
-        # system_router
+        get_all_permissions_used
     ]
 )

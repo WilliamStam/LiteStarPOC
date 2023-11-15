@@ -1,6 +1,6 @@
 import dataclasses
 from typing import Union
-
+from .collection import Collection
 
 @dataclasses.dataclass
 class Permission():
@@ -23,3 +23,9 @@ class Permission():
             parent = parent.parent
         p.reverse()
         return str(".".join(p))
+    
+
+    
+class PermissionCollection(Collection):
+    def add(self, item: Permission):
+        super().add(item)

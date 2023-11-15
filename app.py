@@ -30,14 +30,15 @@ log_config = LoggingConfig(
 logger = log_config.configure()()
 
 
-
-
-
+async def new_line(request: Request) -> None:
+    request.logger.info("------------------")
+    return None
 app = Litestar(
     debug=True,
     route_handlers=[
         router
     ],
+    after_response=new_line,
     openapi_config=OpenAPIConfig(
         title="my api",
         version="1.0.0",

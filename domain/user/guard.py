@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import List, Union
 
 from litestar.connection import ASGIConnection
+from litestar.exceptions import NotAuthorizedException, PermissionDeniedException
 from litestar.handlers import BaseRouteHandler
 
-from litestar.exceptions import NotAuthorizedException, PermissionDeniedException
+from utilities.permission import Permission
+from permissions import system_permissions
 
 
 # @get("/authenticated", guards=[Authorize()]) - user must be authenticated to see this route
@@ -12,10 +14,24 @@ from litestar.exceptions import NotAuthorizedException, PermissionDeniedExceptio
 # you could also probably accept False in scopes and then make sure the user ISNT logged in. it would just be a union in the init and a check if self.scopes == False and if user.is_authed() then raise error
 class Authorize():
     
-    def __init__(self, scopes: Optional[List[str]] = None):
-        if scopes is None:
-            scopes = []
-        self.scopes = scopes
+    def __init__(
+        self,
+        permissions: Union[
+            Permission,
+            List[Permission],
+            None
+        ] = None
+    ):
+        if permissions is None:
+            permissions = []
+        
+        if isinstance(permissions, Permission):
+            permissions = [permissions]
+            
+        for perm in permissions:
+            system_permissions.add(perm)
+        
+        self.permissions = permissions
     
     async def __call__(self, connection: ASGIConnection, route_handler: BaseRouteHandler):
         connection.logger.info(f"user: {connection.user}")
@@ -23,11 +39,11 @@ class Authorize():
             connection.logger.warning("user isn't authenticated")
             raise NotAuthorizedException()
         
-        missing_scopes = []
-        for scope in self.scopes:
-            if str(scope) not in connection.user.permissions:
-                missing_scopes.append(str(scope))
+        missing_permissions = []
+        for permission in self.permissions:
+            if str(permission) not in connection.user.permissions:
+                missing_permissions.append(str(permission))
         
-        if missing_scopes:
-            connection.logger.warning(f"User missing scope '{missing_scopes}'")
+        if missing_permissions:
+            connection.logger.warning(f"User missing permission(s) {missing_permissions}")
             raise PermissionDeniedException()

@@ -7,12 +7,12 @@ class UserModel(BaseModel):
     token: Optional[str] = None
     permissions: List[str] = Field(default_factory=list)
     
-    def has_permissions(self, scopes:List[str] = None):
-        if scopes is None:
-            scopes = []
+    def has_permissions(self, permissions:List[str] = None):
+        if permissions is None:
+            permissions = []
         
-        for scope in scopes:
-            if str(scope) not in self.permissions:
+        for permission in permissions:
+            if str(permission) not in self.permissions:
                 return False
             
         return True

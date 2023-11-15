@@ -32,6 +32,7 @@ def UserMiddleware(app: ASGIApp) -> ASGIApp:
         # you can also probably generate a new key for the user if not logged in on redis or something and link "products" to that
         user = UserModel()
         if token:
+            request.logger.info(f"Fetching user from database using token {token}")
             user = UserModel(
                 id=1,
                 name="im real",
