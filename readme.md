@@ -35,6 +35,20 @@ the user middleware retrieves the current user and sets it to request.user.
  
 the Authorize() guard checks that the supplied scopes and user correlates but it also houses a scopes property in it for later use since the guards object is available
 
+since the Authorize guard has the desired scopes in it you can always loop through the guards to find an instance of Authorize and get the scopes from that guard (see part below). 
+
+```python
+    all_scopes = []
+    for guard in handle.guards:
+        #if the guard is a subclass of Authorize then we use its scopes
+        # might be a good idea to lookup "all" authorize scopes and combine them incase somone goes wierd and guard=[Authorize("a"),Authorize("b")
+        if isinstance(guard, Authorize):
+            for scope in guard.scopes:
+                all_scopes.append(scope)
+    if all_scopes:
+        request.logger.info(f"Scopes required for route {route.path} - {all_scopes}")
+
+```
 
 ## OpenAPI spec
 

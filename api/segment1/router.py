@@ -9,7 +9,7 @@ class MyController(Controller):
     # in all of thess routes im injecting the user object. this is NOT required for the auth system to work. its purely for my sanity checks
     
     # the user must have this/these permissions to be able to access this route
-    @get("/open")
+    @get("/open", operation_class=CustomOperation)
     async def open(self, request: Request, user: User) -> str:
         """totaly open route"""
         return f"all open | {user}"
@@ -19,12 +19,12 @@ class MyController(Controller):
         """user must be authenticated"""
         return f"user must be authenticated | {user}"
     
-    @get("/authorized1", guards=[Authorize(["perm1"])])
+    @get("/authorized1", guards=[Authorize(["perm1"])], operation_class=CustomOperation)
     async def authorized1(self, user: User) -> str:
         """user must have ['perm1']"""
         return f"user must have ['perm1'] permission | {user}"
     
-    @get("/authorized2", guards=[Authorize(["perm2", "perm3"])])
+    @get("/authorized2", guards=[Authorize(["perm2", "perm3"])], operation_class=CustomOperation)
     async def authorized2(self, user: User) -> str:
         """user must have ['perm2','perm3']"""
         return f"user must have ['perm2','perm3'] permission | {user}"

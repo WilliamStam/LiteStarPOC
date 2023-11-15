@@ -41,7 +41,6 @@ class OpenAPIController(Controller):
     @get("/openapi.json", include_in_schema=False)
     async def openapi(self, request: Request) -> ASGIResponse:
         request.logger.info(f"User: {request.user}")
-        # 2023-11-14 14:24:43,020 22268 INFO:root: User: id=1 name='im real' permissions=['perm1', 'perm2', 'perm4']
         
         schemas = []
         for key, value in request.app.openapi_config.components.security_schemes.items():
@@ -62,15 +61,13 @@ class OpenAPIController(Controller):
                                 all_scopes.append(scope)
                     if all_scopes:
                         request.logger.info(f"Scopes required for route {route.path} - {all_scopes}")
-                        # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authenticated - []
-                        # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized1 - ['perm1']
-                        # 2023-11-14 14:22:43,646 14820 INFO:root: Scopes required for route /segment1/authorized2 - ['perm2', 'perm3']
                         if not request.user.has_permissions(all_scopes):
                             pass
                             # handle.include_in_schema = False
                     if authed_route:
                         handle.security = secure_route_security
-                
+                    handle.operation_class.x_scopes = all_scopes
+                    handle.operation_class.x_requires_auth = authed_route
                 
         
         schema = request.app.openapi_schema.to_schema()
