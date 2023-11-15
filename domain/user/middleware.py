@@ -4,7 +4,7 @@ from litestar.types import ASGIApp, Receive, Scope, Send
 from .model import UserModel
 
 
-def middleware_user_factory(app: ASGIApp) -> ASGIApp:
+def UserMiddleware(app: ASGIApp) -> ASGIApp:
     async def user_middleware(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope)
         security_schemas = scope.get("app").openapi_config.components.security_schemes

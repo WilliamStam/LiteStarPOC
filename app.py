@@ -8,7 +8,7 @@ from litestar.openapi import OpenAPIConfig
 from litestar.openapi.spec import Components, SecurityScheme
 from litestar.template import TemplateConfig
 
-from domain.user.middleware import middleware_user_factory
+from domain.user.middleware import UserMiddleware
 
 
 from router import router
@@ -71,7 +71,7 @@ app = Litestar(
     ),
     
     middleware=[
-        middleware_user_factory
+        UserMiddleware
     ],
     
     
