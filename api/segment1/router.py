@@ -6,6 +6,8 @@ from domain.user.guard import Authorize
 from utilities.openapi import CustomOperation
 class MyController(Controller):
     
+    # in all of thess routes im injecting the user object. this is NOT required for the auth system to work. its purely for my sanity checks
+    
     # the user must have this/these permissions to be able to access this route
     @get("/open")
     async def open(self, request: Request, user: User) -> str:

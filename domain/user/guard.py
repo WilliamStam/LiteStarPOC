@@ -6,6 +6,10 @@ from litestar.handlers import BaseRouteHandler
 from litestar.exceptions import NotAuthorizedException, PermissionDeniedException
 
 
+# @get("/authenticated", guards=[Authorize()]) - user must be authenticated to see this route
+# @get("/authorized2", guards=[Authorize(["perm2", "perm3"])]) - user must have all of those permissions to see this route
+
+# you could also probably accept False in scopes and then make sure the user ISNT logged in. it would just be a union in the init and a check if self.scopes == False and if user.is_authed() then raise error
 class Authorize():
     
     def __init__(self, scopes: Optional[List[str]] = None):
