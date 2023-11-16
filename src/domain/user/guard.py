@@ -6,6 +6,7 @@ from litestar.handlers import BaseRouteHandler
 
 from utilities.permission import Permission
 from permissions import system_permissions
+from utilities.openapi import CustomOperation
 
 
 # @get("/authenticated", guards=[Authorize()]) - user must be authenticated to see this route

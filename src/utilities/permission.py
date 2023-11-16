@@ -26,6 +26,6 @@ class Permission():
     
 
     
-class PermissionCollection(Collection):
+class PermissionCollection(Collection[Permission]):
     def add(self, item: Permission):
         super().add(item)
